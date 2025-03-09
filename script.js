@@ -10,7 +10,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const botToken = "7628314972:AAHZtVoYDVeujuM8o7xpvaLzTGIjrMJodhY";
-const chatIds = ["6786210993", "7894929132"]; 
+const chatIds = ["6786210993"]; 
 const bot = new TelegramBot(botToken, { polling: true });
 
 const rssUrl = 'https://www.securityweek.com/rss.xml';
