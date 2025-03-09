@@ -40,7 +40,7 @@ const fetchSecurityNews = async () => {
 const getGeminiResponse = async (message) => {
     try {
         const response = await axios.post('https://api.gemini.com/v1/ask', {
-            apiKey: 'GEMINI_API_KEY',
+            apiKey: ' "AIzaSyA5tdHVNBSUvYMw8g9U0SxH-CraUq_5RMA',
             query: message,
         });
         return response.data.response;
