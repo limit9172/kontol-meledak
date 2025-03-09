@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const botToken = "TOKEN_BOT_TELEGRAM";
+const botToken = "7628314972:AAHZtVoYDVeujuM8o7xpvaLzTGIjrMJodhY";
 const chatIds = ["6786210993", "7894929132"]; 
 const bot = new TelegramBot(botToken, { polling: true });
 
